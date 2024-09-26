@@ -1,0 +1,3 @@
+# Example Cloudflare API token
+# Generated on Cloudflare dashboard with "Workers AI" edit access
+CLOUDFLARE_API_TOKEN="FOO"
