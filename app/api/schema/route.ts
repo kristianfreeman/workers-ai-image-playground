@@ -14,18 +14,25 @@ export async function GET(request: NextRequest) {
   const env = getRequestContext().env;
   const { CLOUDFLARE_ACCOUNT_ID: account_id, CLOUDFLARE_API_TOKEN } = env;
 
-  const client = new Cloudflare({
-    apiToken: CLOUDFLARE_API_TOKEN,
-  });
+  if (!account_id) return new Response("Account ID not specified", { status: 400 });
+  if (!CLOUDFLARE_API_TOKEN) return new Response("API token not specified", { status: 400 });
 
-  const schema = await client.workers.ai.models.schema.get({
-    account_id,
-    model,
-  });
+  try {
+    const client = new Cloudflare({
+      apiToken: CLOUDFLARE_API_TOKEN,
+    });
 
-  return new Response(JSON.stringify(schema), {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+    const schema = await client.workers.ai.models.schema.get({
+      account_id,
+      model,
+    });
+
+    return new Response(JSON.stringify(schema), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error: any) {
+    return new Response(error.message, { status: 500 });
+  }
 }

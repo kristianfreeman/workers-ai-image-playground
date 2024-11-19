@@ -7,21 +7,27 @@ import { getRequestContext } from '@cloudflare/next-on-pages'
 export const runtime = 'edge'
 
 export async function POST(request: NextRequest) {
-  const context = getRequestContext()
-  const { AI, BUCKET } = context.env
-  let { prompt, model } = await request.json<{ prompt: string, model: string }>()
-  if (!model) model = "@cf/black-forest-labs/flux-1-schnell"
+  try {
+    const context = getRequestContext()
+    const { AI, BUCKET } = context.env
+    let { prompt, model } = await request.json<{ prompt: string, model: string }>()
+    if (!model) model = "@cf/black-forest-labs/flux-1-schnell"
 
-  const inputs = { prompt }
-  const response = await AI.run(model, inputs)
+    const inputs = { prompt }
+    const response = await AI.run(model, inputs)
 
-  const promptToPath = (prompt: string) => prompt.replace(/[^a-zA-Z0-9]/g, '-')
-  const imageData = response.image
-  await BUCKET.put(`/${promptToPath(prompt)}.png`, imageData, { httpMetadata: { contentType: 'image/png' } })
+    const promptKey = encodeURIComponent(prompt.replace(/\s/g, '-'))
+    const binaryString = atob(response.image);
+    // @ts-ignore
+    const img = Uint8Array.from(binaryString, (m) => m.codePointAt(0));
+    await BUCKET.put(`${promptKey}.jpeg`, img, { httpMetadata: { contentType: 'image/jpeg' } })
 
-  return new Response(`data:image/png;base64,${response.image}`, {
-    headers: {
-      'Content-Type': 'image/png',
-    },
-  })
+    return new Response(`data:image/jpeg;base64,${response.image}`, {
+      headers: {
+        'Content-Type': 'image/jpeg',
+      },
+    })
+  } catch (error: any) {
+    return new Response(error.message, { status: 500 })
+  }
 }
