@@ -7,12 +7,18 @@ import { getRequestContext } from '@cloudflare/next-on-pages'
 export const runtime = 'edge'
 
 export async function POST(request: NextRequest) {
-  const ai = getRequestContext().env.AI
+  const context = getRequestContext()
+  const { AI, BUCKET } = context.env
   let { prompt, model } = await request.json<{ prompt: string, model: string }>()
   if (!model) model = "@cf/black-forest-labs/flux-1-schnell"
 
   const inputs = { prompt }
-  const response = await ai.run(model, inputs)
+  const response = await AI.run(model, inputs)
+
+  const promptToPath = (prompt: string) => prompt.replace(/[^a-zA-Z0-9]/g, '-')
+  const imageData = response.image
+  await BUCKET.put(`/${promptToPath(prompt)}.png`, imageData, { httpMetadata: { contentType: 'image/png' } })
+
   return new Response(`data:image/png;base64,${response.image}`, {
     headers: {
       'Content-Type': 'image/png',

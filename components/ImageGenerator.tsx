@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Download } from "lucide-react"
+import Link from "next/link";
 
 type Model = {
   id: string
@@ -40,7 +42,7 @@ export default function SimpleImageGenerator() {
       .then((data) => setModels(data as Model[]))
       .catch(console.error)
   }, [])
-  
+
   useEffect(() => {
     if (selectedModel) {
       fetch(`/api/schema?model=${selectedModel}`)
@@ -94,8 +96,9 @@ export default function SimpleImageGenerator() {
         <div className="p-4 bg-white space-y-2">
           <h1 className="text-2xl font-bold">Workers AI Image Generator</h1>
           <h2 className="text-lg mb-8">
-            Powered by <a href="https://developers.cloudflare.com/workers-ai" className="text-blue-500 hover:underline">Cloudflare Workers AI</a>. 
-            Source code available on <a href="https://github.com/kristianfreeman/workers-ai-image-playground" className="text-blue-500 hover:underline">GitHub</a>.
+            Powered by <a href="https://developers.cloudflare.com/workers-ai" className="text-blue-500 hover:underline">Cloudflare Workers AI</a>.
+            Source code available on <a href="https://github.com/kristianfreeman/workers-ai-image-playground" className="text-blue-500 hover:underline">GitHub</a>.&nbsp;
+            <Link className="underline" href="/images">See all generated images.</Link>
           </h2>
         </div>
         <div className="flex-grow overflow-auto p-4">
@@ -143,7 +146,7 @@ export default function SimpleImageGenerator() {
           <Loader2 className="h-16 w-16 animate-spin" />
         ) : generatedImage ? (
           <>
-            <img src={generatedImage} alt="Generated" className="w-full h-auto rounded-lg shadow-lg mb-4" />
+            <Image src={generatedImage} alt="Generated" className="w-full h-auto rounded-lg shadow-lg mb-4" />
             <Button onClick={handleDownload} className="mt-4">
               <Download className="mr-2 h-4 w-4" /> Download Image
             </Button>
