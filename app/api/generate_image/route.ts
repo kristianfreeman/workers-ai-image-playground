@@ -1,13 +1,33 @@
 import type { NextRequest } from 'next/server'
 import { getRequestContext } from '@cloudflare/next-on-pages'
+import { z } from 'zod'
 
 export const runtime = 'edge'
+
+const requestSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required"),
+  model: z.string().optional()
+})
 
 export async function POST(request: NextRequest) {
   try {
     const context = getRequestContext()
     const { AI, BUCKET } = context.env
-    let { prompt, model } = await request.json<{ prompt: string, model: string }>()
+    const parsedRequest = requestSchema.safeParse(await request.json())
+
+    if (!parsedRequest.success) {
+      return new Response(JSON.stringify({
+        error: "Invalid request data",
+        details: parsedRequest.error.errors
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    }
+
+    let { prompt, model } = parsedRequest.data
     if (!model) model = "@cf/black-forest-labs/flux-1-schnell"
 
     const inputs = { prompt }
@@ -25,6 +45,16 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    return new Response(error.message, { status: 500 })
+    console.error("Error processing request:", error)
+    return new Response(JSON.stringify({
+      error: "Internal Server Error",
+      message: error.message,
+      stack: error.stack
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
   }
 }
