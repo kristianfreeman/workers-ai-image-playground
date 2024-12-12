@@ -1,13 +1,34 @@
 import type { NextRequest } from 'next/server'
 import { getRequestContext } from '@cloudflare/next-on-pages'
+import { z } from 'zod'
 
 export const runtime = 'edge'
+
+const requestSchema = z.object({
+  message: z.string().min(1, "Message is required"),
+  sessionId: z.string().min(1, "Session ID is required"),
+  model: z.string().min(1, "Model is required")
+})
 
 export async function POST(request: NextRequest) {
   try {
     const context = getRequestContext()
     const { AI, D1, DURABLE_OBJECTS } = context.env
-    const { message, sessionId, model } = await request.json<{ message: string, sessionId: string, model: string }>()
+    const parsedRequest = requestSchema.safeParse(await request.json())
+
+    if (!parsedRequest.success) {
+      return new Response(JSON.stringify({
+        error: "Invalid request data",
+        details: parsedRequest.error.errors
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    }
+
+    const { message, sessionId, model } = parsedRequest.data
 
     // Use Durable Objects to manage active chat sessions
     const session = await DURABLE_OBJECTS.get(sessionId)
@@ -31,6 +52,16 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    return new Response(error.message, { status: 500 })
+    console.error("Error processing request:", error)
+    return new Response(JSON.stringify({
+      error: "Internal Server Error",
+      message: error.message,
+      stack: error.stack
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
   }
 }
