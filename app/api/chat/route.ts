@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { getRequestContext } from '@cloudflare/next-on-pages'
 import { z } from 'zod'
+import { authenticate } from '@cloudflare/access'
 
 export const runtime = 'edge'
 
@@ -29,6 +30,16 @@ export async function POST(request: NextRequest) {
     }
 
     const { message, sessionId, model } = parsedRequest.data
+
+    // Authenticate the request using Cloudflare Access
+    const authResult = await authenticate(request)
+    if (!authResult.authenticated) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+        description: "You are not authorized to access this resource."
+      }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+    }
 
     // Use Durable Objects to manage active chat sessions
     const session = await DURABLE_OBJECTS.get(sessionId)

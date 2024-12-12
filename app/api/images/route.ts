@@ -1,11 +1,22 @@
 import { getRequestContext } from '@cloudflare/next-on-pages'
+import { authenticate } from '@cloudflare/access'
 
 export const runtime = 'edge'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const context = getRequestContext()
     const { BUCKET } = context.env
+
+    // Authenticate the request using Cloudflare Access
+    const authResult = await authenticate(request)
+    if (!authResult.authenticated) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+        description: "You are not authorized to access this resource."
+      }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+    }
 
     const options = { limit: 500 }
 

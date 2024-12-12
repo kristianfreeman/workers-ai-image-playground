@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Download } from "lucide-react"
 import Link from "next/link";
+import { Carousel } from "shadcn-ui";
+import { Modal } from "shadcn-ui";
+import { Filter } from "shadcn-ui";
 
 type Model = {
   id: string
@@ -34,7 +37,10 @@ export default function SimpleImageGenerator() {
   const [schema, setSchema] = useState<Schema | null>(null)
   const [inputValues, setInputValues] = useState<Record<string, any>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [generatedImages, setGeneratedImages] = useState<string[]>([])
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [appliedFilter, setAppliedFilter] = useState<string>("")
 
   useEffect(() => {
     fetch("/api/models")
@@ -69,7 +75,8 @@ export default function SimpleImageGenerator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: selectedModel, ...inputValues }),
       })
-      setGeneratedImage(await response.text())
+      const newImage = await response.text()
+      setGeneratedImages((prevImages) => [...prevImages, newImage])
     } catch (error) {
       console.error("Error generating image:", error)
     } finally {
@@ -81,14 +88,21 @@ export default function SimpleImageGenerator() {
     return selectedModel && schema?.input.required.every(field => inputValues[field] !== undefined && inputValues[field] !== '')
   }, [selectedModel, schema, inputValues])
 
-  const handleDownload = useCallback(() => {
-    if (generatedImage) {
-      const link = document.createElement('a')
-      link.href = generatedImage
-      link.download = 'generated-image.png'
-      link.click()
-    }
-  }, [generatedImage])
+  const handleDownload = useCallback((image: string) => {
+    const link = document.createElement('a')
+    link.href = image
+    link.download = 'generated-image.png'
+    link.click()
+  }, [])
+
+  const handleImageClick = (image: string) => {
+    setSelectedImage(image)
+    setIsModalOpen(true)
+  }
+
+  const handleFilterChange = (filter: string) => {
+    setAppliedFilter(filter)
+  }
 
   return (
     <div className="min-h-screen block md:flex">
@@ -144,10 +158,16 @@ export default function SimpleImageGenerator() {
       <div className="w-full md:w-1/2 block md:flex flex-col items-center justify-center p-4 bg-gray-50">
         {isLoading ? (
           <Loader2 className="h-16 w-16 animate-spin" />
-        ) : generatedImage ? (
+        ) : generatedImages.length > 0 ? (
           <>
-            <Image src={generatedImage} alt="Generated" className="w-full h-auto rounded-lg shadow-lg mb-4" />
-            <Button onClick={handleDownload} className="mt-4">
+            <Carousel>
+              {generatedImages.map((image, index) => (
+                <div key={index} onClick={() => handleImageClick(image)}>
+                  <Image src={image} alt={`Generated ${index}`} className={`w-full h-auto rounded-lg shadow-lg mb-4 ${appliedFilter}`} />
+                </div>
+              ))}
+            </Carousel>
+            <Button onClick={() => handleDownload(selectedImage!)} className="mt-4">
               <Download className="mr-2 h-4 w-4" /> Download Image
             </Button>
           </>
@@ -155,6 +175,14 @@ export default function SimpleImageGenerator() {
           <div className="text-center text-gray-500">Your generated image will appear here</div>
         )}
       </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        {selectedImage && (
+          <div className="flex flex-col items-center">
+            <Image src={selectedImage} alt="Selected" className={`w-full h-auto rounded-lg shadow-lg mb-4 ${appliedFilter}`} />
+            <Filter onChange={handleFilterChange} />
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
