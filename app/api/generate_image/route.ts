@@ -1,6 +1,3 @@
-// a next.js route that handles a JSON post request with prompt and model
-// and calls the Cloudflare Workers AI model
-
 import type { NextRequest } from 'next/server'
 import { getRequestContext } from '@cloudflare/next-on-pages'
 
