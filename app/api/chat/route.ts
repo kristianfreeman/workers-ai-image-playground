@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const context = getRequestContext()
     const { AI, D1, DURABLE_OBJECTS } = context.env
-    const { message, sessionId } = await request.json<{ message: string, sessionId: string }>()
+    const { message, sessionId, model } = await request.json<{ message: string, sessionId: string, model: string }>()
 
     // Use Durable Objects to manage active chat sessions
     const session = await DURABLE_OBJECTS.get(sessionId)
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Generate AI response
     const inputs = { message }
-    const response = await AI.run('@cf/qwen/qwen1.5-0.5b-chat', inputs)
+    const response = await AI.run(model, inputs)
     chatLogs.push({ sender: 'ai', message: response.message })
 
     // Store the updated chat logs in D1

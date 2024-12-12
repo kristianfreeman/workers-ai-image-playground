@@ -1,40 +1,35 @@
+import { getRequestContext } from '@cloudflare/next-on-pages';
+import Cloudflare from 'cloudflare';
+
 export const runtime = 'edge';
 
 export async function GET(_request: Request) {
-  const models = [
-    {
-      name: "dreamshaper-8-lcm",
-      id: "@cf/lykon/dreamshaper-8-lcm"
-    },
-    {
-      name: "flux-1-schnell",
-      id: "@cf/black-forest-labs/flux-1-schnell"
-    },
-    {
-      name: "qwen1.5-0.5b-chat",
-      id: "@cf/qwen/qwen1.5-0.5b-chat"
-    },
-    {
-      name: "stable-diffusion-v1-5-img2img",
-      id: "@cf/runwayml/stable-diffusion-v1-5-img2img"
-    },
-    {
-      name: "stable-diffusion-v1-5-inpainting",
-      id: "@cf/runwayml/stable-diffusion-v1-5-inpainting"
-    },
-    {
-      name: "stable-diffusion-xl-base-1.0",
-      id: "@cf/stabilityai/stable-diffusion-xl-base-1.0"
-    },
-    {
-      name: "stable-diffusion-xl-lightning",
-      id: "@cf/bytedance/stable-diffusion-xl-lightning"
-    }
-  ];
+  const env = getRequestContext().env;
+  const { CLOUDFLARE_ACCOUNT_ID: account_id, CLOUDFLARE_API_TOKEN } = env;
 
-  return new Response(JSON.stringify(models), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  if (!account_id) return new Response("Account ID not specified", { status: 400 });
+  if (!CLOUDFLARE_API_TOKEN) return new Response("API token not specified", { status: 400 });
+
+  try {
+    const client = new Cloudflare({
+      apiToken: CLOUDFLARE_API_TOKEN,
+    });
+
+    const models = await client.workers.ai.models.list({
+      account_id,
+    });
+
+    const compatibleModels = models.filter((model: any) => {
+      // Add compatibility check logic here
+      return true; // Placeholder, assume all models are compatible for now
+    });
+
+    return new Response(JSON.stringify(compatibleModels), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error: any) {
+    return new Response(error.message, { status: 500 });
+  }
 }
