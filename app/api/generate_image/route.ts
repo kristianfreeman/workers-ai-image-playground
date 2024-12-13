@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { getRequestContext } from '@cloudflare/next-on-pages'
 import { z } from 'zod'
+import { authenticate } from '@cloudflare/access'
 
 export const runtime = 'edge'
 
@@ -29,6 +30,16 @@ export async function POST(request: NextRequest) {
 
     let { prompt, model } = parsedRequest.data
     if (!model) model = "@cf/black-forest-labs/flux-1-schnell"
+
+    // Authenticate the request using Cloudflare Access
+    const authResult = await authenticate(request)
+    if (!authResult.authenticated) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+        description: "You are not authorized to access this resource."
+      }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+    }
 
     const inputs = { prompt }
     const response = await AI.run(model, inputs)

@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChatBubble, Timestamp, TypingIndicator } from 'shadcn-ui';
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     fetch("/api/models")
@@ -20,9 +22,10 @@ const Chat = () => {
   const handleSend = async () => {
     if (input.trim() === '' || selectedModel === '') return;
 
-    const newMessage = { sender: 'user', text: input };
+    const newMessage = { sender: 'user', text: input, timestamp: new Date().toISOString() };
     setMessages([...messages, newMessage]);
     setInput('');
+    setIsTyping(true);
 
     try {
       const response = await fetch('/api/chat', {
@@ -32,10 +35,12 @@ const Chat = () => {
       });
 
       const data = await response.json();
-      const aiMessage = { sender: 'ai', text: data.message };
+      const aiMessage = { sender: 'ai', text: data.message, timestamp: new Date().toISOString() };
       setMessages([...messages, newMessage, aiMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -43,10 +48,12 @@ const Chat = () => {
     <div className="chat-container">
       <div className="chat-messages">
         {messages.map((msg, index) => (
-          <div key={index} className={`chat-message ${msg.sender}`}>
+          <ChatBubble key={index} sender={msg.sender}>
             {msg.text}
-          </div>
+            <Timestamp>{new Date(msg.timestamp).toLocaleTimeString()}</Timestamp>
+          </ChatBubble>
         ))}
+        {isTyping && <TypingIndicator />}
       </div>
       <Form onSubmit={handleSend}>
         <FormItem>

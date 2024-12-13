@@ -1,9 +1,10 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import Cloudflare from 'cloudflare';
+import { authenticate } from '@cloudflare/access';
 
 export const runtime = 'edge';
 
-export async function GET(_request: Request) {
+export async function GET(request: Request) {
   const env = getRequestContext().env;
   const { CLOUDFLARE_ACCOUNT_ID: account_id, CLOUDFLARE_API_TOKEN } = env;
 
@@ -24,6 +25,16 @@ export async function GET(_request: Request) {
   }
 
   try {
+    // Authenticate the request using Cloudflare Access
+    const authResult = await authenticate(request);
+    if (!authResult.authenticated) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+        description: "You are not authorized to access this resource."
+      }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const client = new Cloudflare({
       apiToken: CLOUDFLARE_API_TOKEN,
     });
