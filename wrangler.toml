@@ -8,8 +8,8 @@ pages_build_output_dir = ".vercel/output/static"
 binding = "AI"
 
 [[r2_buckets]]
+bucket_name = "ai-img-playground"
 binding = "BUCKET"
-bucket_name = "ai-image-playground"
 
 [vars]
 CLOUDFLARE_ACCOUNT_ID = "dc56444c4c955a1653106ccf997c1067"

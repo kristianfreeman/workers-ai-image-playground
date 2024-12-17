@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // @ts-ignore
     const img = Uint8Array.from(binaryString, (m) => m.codePointAt(0));
-    await BUCKET.put(`${promptKey}.jpeg`, img) //, { httpMetadata: { contentType: 'image/jpeg' } })
+    await BUCKET.put(`${promptKey}.jpeg`, img)
 
     return new Response(`data:image/jpeg;base64,${response.image}`, {
       headers: {
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
+    console.log(error)
     return new Response(error.message, { status: 500 })
   }
 }

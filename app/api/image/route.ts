@@ -22,5 +22,4 @@ export async function GET(request: NextRequest) {
       'Content-Type': contentType
     },
   })
-
 }
