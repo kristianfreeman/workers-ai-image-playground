@@ -69,7 +69,11 @@ export default function SimpleImageGenerator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: selectedModel, ...inputValues }),
       })
-      setGeneratedImage(await response.text())
+      if (response.ok) {
+        setGeneratedImage(await response.text())
+      } else {
+        console.error("Error generating image:", response.statusText)
+      }
     } catch (error) {
       console.error("Error generating image:", error)
     } finally {
@@ -146,7 +150,7 @@ export default function SimpleImageGenerator() {
           <Loader2 className="h-16 w-16 animate-spin" />
         ) : generatedImage ? (
           <>
-            <Image src={generatedImage} alt="Generated" className="w-full h-auto rounded-lg shadow-lg mb-4" />
+            <Image src={generatedImage} alt="Generated" className="w-full h-auto rounded-lg shadow-lg mb-4" width={512} height={512} />
             <Button onClick={handleDownload} className="mt-4">
               <Download className="mr-2 h-4 w-4" /> Download Image
             </Button>

@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
 
     const promptKey = encodeURIComponent(prompt.replace(/\s/g, '-'))
     const binaryString = atob(response.image);
+
     // @ts-ignore
     const img = Uint8Array.from(binaryString, (m) => m.codePointAt(0));
-    await BUCKET.put(`${promptKey}.jpeg`, img, { httpMetadata: { contentType: 'image/jpeg' } })
+    await BUCKET.put(`${promptKey}.jpeg`, img) //, { httpMetadata: { contentType: 'image/jpeg' } })
 
     return new Response(`data:image/jpeg;base64,${response.image}`, {
       headers: {
