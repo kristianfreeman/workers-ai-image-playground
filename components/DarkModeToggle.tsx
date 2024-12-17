@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Toggle } from '@/components/ui/toggle';
+import { Toggle } from './ui/toggle';
 
 const DarkModeToggle = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
